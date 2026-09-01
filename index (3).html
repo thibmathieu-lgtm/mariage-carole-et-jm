@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Carole & JM — à faire</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    background: #FBF7F0;
+    color: #2E2A24;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+  button, input, textarea { font-family: inherit; }
+  ::selection { background: #D8C9A8; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes sheetUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  .task-row { transition: background 0.15s ease; }
+  .task-row:active { background: #F0E8D8; }
+  .fab:hover { background: #4A5D45 !important; transform: scale(1.04); }
+  .fab:active { transform: scale(0.96); }
+  .sheet-overlay { animation: overlayIn 0.18s ease; }
+  .sheet-panel { animation: sheetUp 0.22s ease; }
+  .filter-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid #C9BB9C; background: transparent; color: #5C5646; font-size: 13.5px; cursor: pointer; }
+  .filter-btn.active { background: #3E4A38; color: #F4EFE3; border-color: #3E4A38; }
+  .period-group { margin-top: 22px; }
+  .period-label { font-size: 12.5px; letter-spacing: 0.4px; color: #8A7A4E; font-weight: 600; margin-bottom: 6px; padding-left: 2px; }
+  .period-card { background: #FFFDF8; border: 1px solid #E7DCC3; border-radius: 12px; overflow: hidden; }
+  .checkbox { margin-top: 2px; width: 20px; height: 20px; min-width: 20px; border-radius: 5px; border: 1.5px solid #B8AC8A; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .checkbox.done { border: none; background: #6B7F5E; }
+  .del-btn { flex-shrink: 0; width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #B8AC8A; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .field-label { font-size: 12.5px; color: #8A7A4E; font-weight: 600; }
+  .field-input { width: 100%; margin-top: 5px; padding: 9px 10px; border-radius: 8px; border: 1px solid #DCCFAE; font-size: 16px; background: #FFFDF8; }
+  @media (max-width: 480px) {
+    .hdr-pad { padding: 20px 16px 18px !important; }
+    .hdr-title { font-size: 24px !important; }
+    .body-pad { padding: 0 12px !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ---------- Config ----------
+var KVDB_BUCKET = "2M2rTPgA6EUsJsfZfjA2Eg";
+var KVDB_KEY = "tasks";
+var KVDB_URL = "https://kvdb.io/" + KVDB_BUCKET + "/" + KVDB_KEY;
+
+var SEED_TASKS = [{"period": "Avant le mariage", "text": "Informer photographe + vidéaste de toutes les animations prévues par les témoins pendant la cérémonie, vin d'honneur, dîner", "who": "Seb M"}, {"period": "Avant le mariage", "text": "Informer DJ de toutes les animations prévues par les témoins pendant la cérémonie, vin d'honneur, dîner", "who": "Thomas"}, {"period": "Avant le mariage", "text": "Prévoir ordi portable avec prise HDMI si nécessaire", "who": "Thomas"}, {"period": "Avant le mariage", "text": "Prévenir la photographe s'il y a une haie d'honneur prévue après la cérémonie à la mairie et/ou après la cérémonie laïque", "who": "Seb M"}, {"period": "Jeudi 3", "text": "Donner le chèque de caution de 500€ à Thibault pour bancs + wero de 57,5€", "who": "JM"}, {"period": "Vendredi 4", "text": "Récupération des bancs avant 16H + un chèque de caution de 500€ + le paiement du solde qui sera de 57,5€", "who": "Thibault"}, {"period": "Vendredi 4", "text": "Ranger les courses en chambre froide : pornstar, prosecco, prep soupe angevine, eau plate, cointreau noir, lait, lait d'avoine, pêches, jambon, jambon de pays, jambon halal, 3 fromages, mayo, beurre, salade", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Mettre les 3 salades en chambre froide", "who": "parents Carole"}, {"period": "Vendredi 4", "text": "Installer la déco des tables : nom sur chaque place + nom des tables avec menu + caramandes", "who": "Seb D, Coline, Sarah"}, {"period": "Vendredi 4", "text": "Installer cérémonie laïque : arche, bancs, pupitre, 2 fauteuils Emmanuel, 2 chaises", "who": "Seb D, Coline, Sarah"}, {"period": "Vendredi 4", "text": "Installer chevalet + planche bois plan de table + plan de table imprimé", "who": "Seb D, Coline, Sarah"}, {"period": "Vendredi 4", "text": "Donner le vin au domaine pour le service", "who": ""}, {"period": "Vendredi 4", "text": "Donner le chèque de caution 500€ à Alban pour l'appartement", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Donner au domaine les marques places avec noms des cocktails et autres boissons", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Dans l'appart à partir de 16H : couper les fruits pour boissons et préparer les bonbonnes d'eau fruitée (mettre fruits et herbes) + donner les tupp au personnel du domaine pour le gin to", "who": ""}, {"period": "Vendredi 4", "text": "Faire un aller-retour pour chercher les affaires OU s'organiser avec Thibault / Coline", "who": "Carole / Thibault / Coline"}, {"period": "Vendredi 4", "text": "Trouver un emplacement dans la salle pour une table avec livre d'or + urne + feutres", "who": ""}, {"period": "Vendredi 4", "text": "Cacher la boîte pour l'énigme + mettre à jour le Lockee", "who": "JM"}, {"period": "Vendredi 4", "text": "Récupérer Clarisse Tarrou + Philippe oncle JM qui arrive à la gare à 18H15", "who": ""}, {"period": "Vendredi 4", "text": "Trouver 1 chambre dédiée au stockage de la bouffe du dimanche", "who": ""}, {"period": "Vendredi 4", "text": "Ranger les courses en chambre pour le brunch : sac jaune, bouilloire, 2 couteaux qui coupent, spatules, nappe", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Donner les alliances et le coussin alliances à Mélissa", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Donner l'enveloppe 750€ à Seb pour mentaliste", "who": "Carole / JM"}, {"period": "Vendredi 4", "text": "Commander à manger / aller chercher à manger", "who": ""}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Donner du démaquillant à Carole pour le samedi soir ?", "who": "Clarisse"}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Mettre le planteur en chambre froide", "who": "Clarisse"}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Monter l'arche avec les photos", "who": ""}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Monter les pissenlits", "who": ""}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Installer les lanternes + bougies sur les tables", "who": "Clarisse"}, {"period": "Vendredi 4 à partir de 21H (arrivée Clarisse)", "text": "Faire brushing", "who": "Clarisse / Carole"}, {"period": "Samedi 5 matin", "text": "Accueillir la fleuriste qui installera les fleurs sur les tables + sur l'arche (1 angle)", "who": "Thomas"}, {"period": "Samedi 5 matin", "text": "Récupérer le bouquet de la mariée auprès de la fleuriste et donner aux témoins de Carole", "who": "Thomas"}, {"period": "Samedi 5 matin", "text": "Accueillir la photographe", "who": "Seb M"}, {"period": "Samedi 5 matin", "text": "Accueillir le vidéaste", "who": "Seb M"}, {"period": "Samedi 5 matin", "text": "Accueillir meuf photobooth le samedi 5 matin avant 10H30 pour la dépose et le montage du photobooth", "who": "Thomas"}, {"period": "Samedi 5 matin", "text": "Installer les 2 voiles sur l'arche", "who": ""}, {"period": "Samedi 5 matin", "text": "Faire les changements de yourte le matin : Clarisse D va en yourte, Clarisse T change de yourte", "who": ""}, {"period": "Samedi 5 AM", "text": "Ranger les courses en chambre froide : gin tonic, coca, jus d'orange, eau pétillante, jus de pomme", "who": "Manu / Seb M"}, {"period": "Samedi 5 AM", "text": "Ranger les courses en chambre pour le brunch : café soluble, gobelets, couverts, assiettes, sopalin, sacs noirs", "who": "Manu / Seb M"}, {"period": "Samedi 5 AM", "text": "Orienter les gens vers leurs chambres / yourtes", "who": ""}, {"period": "Samedi 5 AM", "text": "Accueillir la DJ pour qu'elle installe son matos à la cérémonie avant 15H", "who": "Thomas"}, {"period": "Samedi 5 AM", "text": "Bouffe Perrine, Clémentine, Margaux à mettre en chambre froide", "who": ""}, {"period": "Samedi 5 AM", "text": "Sortir les eaux aromatisées + ecocups + une table de service ?", "who": "Thomas, Coline"}, {"period": "Samedi 5 AM", "text": "Appeler les gens pour faire les photos de groupe avec le micro de la DJ (la liste sera donnée)", "who": "Seb M + Clarisse"}, {"period": "Samedi 5 AM", "text": "Accueillir la mentaliste + lui donner les 750€ en liquide", "who": "Seb M"}, {"period": "Samedi 5 AM", "text": "Rameuter les gens pour le début du dîner entre 19H et 20H", "who": ""}, {"period": "Samedi 5 AM", "text": "Aller danser avec nous pendant l'ouverture de bal", "who": ""}, {"period": "Dimanche 6 matin", "text": "Aller chercher la commande de pain + viennoiseries à la boulangerie", "who": "Clarisse"}, {"period": "Dimanche 6 matin", "text": "Installer les tables dehors : 1 table bouffe boisson, 1 table jeux de société, 1 ou plusieurs tables pour ceux qui veulent s’asseoir", "who": ""}, {"period": "Dimanche 6 matin", "text": "Installer nappes sur les tables", "who": ""}, {"period": "Dimanche 6 matin", "text": "Installer la bouffe + étiquettes pour végé", "who": ""}, {"period": "Dimanche 6 matin", "text": "Préparer du café (bouilloire)", "who": "Seb Thibault"}, {"period": "Dimanche 6 matin", "text": "Avoir un oeil sur le stock de bouffe sur la table : café, jambon, jus", "who": ""}, {"period": "Dimanche 6 matin", "text": "Installer les jeux : cornhole, palet, badminton, molkky, jeux de société", "who": ""}, {"period": "Dimanche 6 matin", "text": "à 11H : libérer l'appartement = poubelles sorties et vaisselle rangée", "who": "Coline / Sarah"}, {"period": "Dimanche 6 matin", "text": "Installer le jeu de piste à 11H : mettre la feuille plastifiée", "who": "JM"}, {"period": "Dimanche 6 matin", "text": "Accueillir la meuf du photobooth pour le retrait", "who": "Thomas"}, {"period": "Dimanche 6 AM avant 18H", "text": "Rangement du dimanche : en attente liste précise domaine", "who": ""}, {"period": "Dimanche 6 AM avant 18H", "text": "Remettre les tables et chaises à l'intérieur", "who": ""}, {"period": "Dimanche 6 AM avant 18H", "text": "Jeter les poubelles (ordures ménagères et poubelle jaune)", "who": ""}, {"period": "Dimanche 6 AM avant 18H", "text": "Récupérer restes de bouffe", "who": ""}, {"period": "Dimanche 6 AM avant 18H", "text": "Vérifier pas de mégots et crottes de chien", "who": ""}, {"period": "Lundi 7 avant 16H", "text": "Rendre les bancs", "who": "Thibault"}, {"period": "Lundi 7", "text": "Retour du matériel de la fleuriste", "who": ""}];
+
+// ---------- Helpers ----------
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function withIds(list) {
+  return list.map(function (t) {
+    return { id: uid(), period: t.period || "", text: t.text, who: t.who || "", done: false };
+  });
+}
+function normalizeForMatch(s) {
+  return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function resolvePeriod(inputPeriod, existingPeriods) {
+  var trimmed = inputPeriod.trim();
+  if (!trimmed) return "";
+  var norm = normalizeForMatch(trimmed);
+  for (var i = 0; i < existingPeriods.length; i++) {
+    if (normalizeForMatch(existingPeriods[i]) === norm) return existingPeriods[i];
+  }
+  return trimmed;
+}
+function groupByPeriod(tasks) {
+  var order = [];
+  var map = {};
+  tasks.forEach(function (t) {
+    var key = t.period || "Sans période";
+    if (!map[key]) { map[key] = []; order.push(key); }
+    map[key].push(t);
+  });
+  return order.map(function (key) { return { period: key, tasks: map[key] }; });
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+// ---------- KVdb ----------
+function kvGet() {
+  return fetch(KVDB_URL, { cache: "no-store" }).then(function (res) {
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("kv get failed: " + res.status);
+    return res.text();
+  }).then(function (text) {
+    return text ? JSON.parse(text) : null;
+  });
+}
+function kvSet(value) {
+  return fetch(KVDB_URL, { method: "POST", body: JSON.stringify(value) }).then(function (res) {
+    if (!res.ok) throw new Error("kv set failed: " + res.status);
+    return true;
+  });
+}
+
+// ---------- State ----------
+var state = {
+  tasks: null,      // null = loading
+  error: null,
+  filter: "todo",    // 'todo' | 'done' | 'all'
+  showForm: false,
+  pendingDeleteId: null,
+  saving: false,
+};
+var lastWriteAt = 0;
+var formDraft = { text: "", period: "", who: "" };
+
+function setState(patch) {
+  Object.assign(state, patch);
+  render();
+}
+
+// ---------- Data actions ----------
+function loadInitial() {
+  kvGet().then(function (remote) {
+    if (remote) {
+      setState({ tasks: remote });
+    } else {
+      var seeded = withIds(SEED_TASKS);
+      setState({ tasks: seeded });
+      return kvSet(seeded);
+    }
+  }).catch(function (e) {
+    console.error("KVdb load error:", e);
+    setState({ error: "Impossible de charger la liste (" + e.message + "). Recharge la page." });
+  });
+}
+
+function persist(next) {
+  setState({ tasks: next, saving: true });
+  lastWriteAt = Date.now();
+  kvSet(next).then(function () {
+    lastWriteAt = Date.now();
+    setState({ saving: false, error: null });
+  }).catch(function (e) {
+    setState({ saving: false, error: "La sauvegarde a échoué. Réessaie." });
+  });
+}
+
+function toggleTask(id) {
+  if (!state.tasks) return;
+  var next = state.tasks.map(function (t) {
+    return t.id === id ? Object.assign({}, t, { done: !t.done }) : t;
+  });
+  persist(next);
+}
+
+function deleteTask(id) {
+  if (!state.tasks) return;
+  var next = state.tasks.filter(function (t) { return t.id !== id; });
+  persist(next);
+  setState({ pendingDeleteId: null });
+}
+
+function addTask() {
+  if (!formDraft.text.trim()) {
+    setState({ error: "Le texte de la tâche est obligatoire." });
+    return;
+  }
+  if (!state.tasks) {
+    setState({ error: "La liste est encore en cours de chargement, réessaie dans un instant." });
+    return;
+  }
+  var existingPeriods = getExistingPeriods();
+  var resolvedPeriod = resolvePeriod(formDraft.period, existingPeriods);
+  var newTask = { id: uid(), period: resolvedPeriod, text: formDraft.text.trim(), who: formDraft.who.trim(), done: false };
+  var next = state.tasks.concat([newTask]);
+  persist(next);
+  formDraft = { text: "", period: "", who: "" };
+  setState({ showForm: false });
+}
+
+function getExistingPeriods() {
+  if (!state.tasks) return [];
+  var seen = {};
+  var list = [];
+  state.tasks.forEach(function (t) {
+    if (t.period && !seen[t.period]) { seen[t.period] = true; list.push(t.period); }
+  });
+  return list;
+}
+
+// Poll for updates from others
+setInterval(function () {
+  if (state.tasks === null) return;
+  if (Date.now() - lastWriteAt < 5000) return;
+  kvGet().then(function (remote) {
+    if (remote && JSON.stringify(remote) !== JSON.stringify(state.tasks)) {
+      setState({ tasks: remote });
+    }
+  }).catch(function () {});
+}, 8000);
+
+// ---------- Render ----------
+var root = document.getElementById("root");
+
+function render() {
+  var tasks = state.tasks;
+  var stats = tasks ? { total: tasks.length, done: tasks.filter(function (t) { return t.done; }).length } : { total: 0, done: 0 };
+  var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+
+  var filterLabels = { todo: "à faire", done: "faites", all: "au total" };
+  var filteredGroups = [];
+  var visibleCount = 0;
+  if (tasks) {
+    var filtered = tasks.filter(function (t) {
+      if (state.filter === "todo") return !t.done;
+      if (state.filter === "done") return t.done;
+      return true;
+    });
+    filteredGroups = groupByPeriod(filtered);
+    visibleCount = filtered.length;
+  }
+
+  var html = "";
+
+  // Header
+  html += '<div class="hdr-pad" style="background:#3E4A38;color:#F4EFE3;padding:28px 20px 22px;border-bottom:3px solid #D9C79E;">';
+  html += '<div style="max-width:640px;margin:0 auto;">';
+  html += '<div style="font-size:13px;letter-spacing:1px;opacity:0.75;margin-bottom:4px;">5–7 septembre</div>';
+  html += '<h1 class="hdr-title" style="margin:0;font-size:30px;font-weight:500;letter-spacing:0.3px;font-style:italic;">Carole &amp; JM — à faire</h1>';
+  html += '<div style="margin-top:14px;display:flex;align-items:center;gap:10px;">';
+  html += '<div style="flex:1;height:8px;background:rgba(244,239,227,0.25);border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:#D9C79E;transition:width 0.3s ease;"></div></div>';
+  html += '<span style="font-size:13px;white-space:nowrap;opacity:0.9;">' + stats.done + '/' + stats.total + ' faites</span>';
+  html += '</div></div></div>';
+
+  html += '<div class="body-pad" style="max-width:640px;margin:0 auto;padding:0 16px;">';
+
+  // Filter tabs
+  html += '<div style="display:flex;gap:6px;margin-top:18px;margin-bottom:10px;">';
+  [["todo", "À faire"], ["done", "Faites"], ["all", "Toutes"]].forEach(function (f) {
+    html += '<button class="filter-btn' + (state.filter === f[0] ? " active" : "") + '" data-filter="' + f[0] + '">' + f[1] + '</button>';
+  });
+  html += '</div>';
+
+  if (tasks !== null) {
+    html += '<div style="font-size:13px;color:#8A8270;margin-bottom:4px;padding-left:2px;">' + visibleCount + ' tâche' + (visibleCount !== 1 ? 's' : '') + ' ' + filterLabels[state.filter] + '</div>';
+  }
+
+  if (state.error) {
+    html += '<div style="background:#F6DDD8;color:#7A2E22;padding:8px 12px;border-radius:8px;font-size:13px;margin:10px 0;">' + escapeHtml(state.error) + '</div>';
+  }
+
+  if (tasks === null && !state.error) {
+    html += '<div style="text-align:center;padding:60px 0;color:#8A8270;">Chargement de la liste…</div>';
+  }
+
+  if (tasks !== null && filteredGroups.length === 0) {
+    html += '<div style="text-align:center;padding:40px 0;color:#8A8270;font-size:15px;">' + (state.filter === "todo" ? "Tout est fait ✨" : "Rien à afficher ici.") + '</div>';
+  }
+
+  filteredGroups.forEach(function (group) {
+    html += '<div class="period-group"><div class="period-label">' + escapeHtml(group.period) + '</div><div class="period-card">';
+    group.tasks.forEach(function (t, i) {
+      html += '<div class="task-row" style="display:flex;align-items:flex-start;gap:10px;padding:13px 14px;' + (i === 0 ? '' : 'border-top:1px solid #F0E8D8;') + '">';
+      html += '<div class="checkbox' + (t.done ? ' done' : '') + '" data-toggle="' + t.id + '">';
+      if (t.done) {
+        html += '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="#FFFDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      }
+      html += '</div>';
+      html += '<div data-toggle="' + t.id + '" style="flex:1;min-width:0;cursor:pointer;">';
+      html += '<div style="font-size:15px;line-height:1.4;color:' + (t.done ? '#A69B85' : '#2E2A24') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';">' + escapeHtml(t.text) + '</div>';
+      if (t.who) html += '<div style="font-size:12.5px;color:#9C8F6F;margin-top:3px;">' + escapeHtml(t.who) + '</div>';
+      html += '</div>';
+      if (state.pendingDeleteId === t.id) {
+        html += '<div style="display:flex;gap:6px;flex-shrink:0;">';
+        html += '<button data-confirm-delete="' + t.id + '" style="padding:5px 9px;border-radius:6px;border:none;background:#B5453B;color:#FFFDF8;font-size:12px;cursor:pointer;">Supprimer</button>';
+        html += '<button data-cancel-delete="1" style="padding:5px 9px;border-radius:6px;border:1px solid #DCCFAE;background:transparent;color:#5C5646;font-size:12px;cursor:pointer;">Annuler</button>';
+        html += '</div>';
+      } else {
+        html += '<button class="del-btn" data-ask-delete="' + t.id + '" aria-label="Supprimer la tâche"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+      }
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<div style="text-align:center;font-size:11.5px;color:#B0A588;margin-top:26px;">Liste partagée — visible et modifiable par toute personne ayant ce lien.</div>';
+  html += '</div>'; // body-pad
+
+  // FAB
+  if (!state.showForm) {
+    html += '<button class="fab" id="fabAdd" aria-label="Ajouter une tâche" style="position:fixed;right:max(20px, env(safe-area-inset-right, 0px));bottom:calc(20px + env(safe-area-inset-bottom, 0px));width:58px;height:58px;border-radius:50%;border:none;background:#3E4A38;color:#F4EFE3;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(46,42,36,0.28);display:flex;align-items:center;justify-content:center;transition:transform 0.12s ease, background 0.15s ease;z-index:20;">+</button>';
+  }
+
+  // Bottom sheet
+  if (state.showForm) {
+    html += '<div class="sheet-overlay" id="sheetOverlay" style="position:fixed;inset:0;background:rgba(46,42,36,0.42);display:flex;align-items:flex-end;justify-content:center;z-index:30;">';
+    html += '<div class="sheet-panel" id="sheetPanel" style="width:100%;max-width:640px;background:#FBF7F0;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px));box-shadow:0 -8px 30px rgba(46,42,36,0.2);">';
+    html += '<div style="width:40px;height:4px;border-radius:2px;background:#DCCFAE;margin:0 auto 16px;"></div>';
+    html += '<div style="font-size:17px;font-style:italic;margin-bottom:14px;">Ajouter une tâche</div>';
+    if (state.error) html += '<div style="background:#F6DDD8;color:#7A2E22;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;">' + escapeHtml(state.error) + '</div>';
+    html += '<label class="field-label">Tâche</label>';
+    html += '<textarea id="fText" class="field-input" placeholder="Ex : Récupérer les nappes chez le loueur" rows="2" style="resize:vertical;margin-bottom:12px;">' + escapeHtml(formDraft.text) + '</textarea>';
+    html += '<div style="display:flex;gap:10px;margin-bottom:14px;">';
+    html += '<div style="flex:1;"><label class="field-label">Période <span style="font-weight:400;">(optionnel)</span></label>';
+    html += '<input id="fPeriod" class="field-input" list="periodsList" placeholder="Ex : Samedi 5 matin" value="' + escapeHtml(formDraft.period) + '" />';
+    html += '<datalist id="periodsList">' + getExistingPeriods().map(function (p) { return '<option value="' + escapeHtml(p) + '"></option>'; }).join('') + '</datalist>';
+    html += '</div>';
+    html += '<div style="flex:1;"><label class="field-label">Qui le fait <span style="font-weight:400;">(optionnel)</span></label>';
+    html += '<input id="fWho" class="field-input" placeholder="Ex : Thomas" value="' + escapeHtml(formDraft.who) + '" />';
+    html += '</div></div>';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button id="cancelAdd" style="padding:12px 16px;border-radius:8px;border:1px solid #DCCFAE;background:transparent;color:#5C5646;font-size:14.5px;cursor:pointer;">Annuler</button>';
+    html += '<button id="submitAdd" style="flex:1;padding:12px;border-radius:8px;border:none;background:#6B7F5E;color:#FFFDF8;font-size:14.5px;cursor:pointer;">Ajouter</button>';
+    html += '</div></div></div>';
+  }
+
+  root.innerHTML = html;
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll("[data-filter]").forEach(function (el) {
+    el.addEventListener("click", function () { setState({ filter: el.getAttribute("data-filter"), pendingDeleteId: null }); });
+  });
+  document.querySelectorAll("[data-toggle]").forEach(function (el) {
+    el.addEventListener("click", function () { toggleTask(el.getAttribute("data-toggle")); });
+  });
+  document.querySelectorAll("[data-ask-delete]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.stopPropagation(); setState({ pendingDeleteId: el.getAttribute("data-ask-delete") }); });
+  });
+  document.querySelectorAll("[data-confirm-delete]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.stopPropagation(); deleteTask(el.getAttribute("data-confirm-delete")); });
+  });
+  document.querySelectorAll("[data-cancel-delete]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.stopPropagation(); setState({ pendingDeleteId: null }); });
+  });
+  var fab = document.getElementById("fabAdd");
+  if (fab) fab.addEventListener("click", function () { setState({ showForm: true, error: null }); });
+
+  var overlay = document.getElementById("sheetOverlay");
+  if (overlay) overlay.addEventListener("click", function (e) { if (e.target === overlay) closeForm(); });
+  var panel = document.getElementById("sheetPanel");
+  if (panel) panel.addEventListener("click", function (e) { e.stopPropagation(); });
+
+  var cancelBtn = document.getElementById("cancelAdd");
+  if (cancelBtn) cancelBtn.addEventListener("click", closeForm);
+  var submitBtn = document.getElementById("submitAdd");
+  if (submitBtn) submitBtn.addEventListener("click", addTask);
+
+  var fText = document.getElementById("fText");
+  if (fText) { fText.focus(); fText.addEventListener("input", function () { formDraft.text = fText.value; }); }
+  var fPeriod = document.getElementById("fPeriod");
+  if (fPeriod) fPeriod.addEventListener("input", function () { formDraft.period = fPeriod.value; });
+  var fWho = document.getElementById("fWho");
+  if (fWho) fWho.addEventListener("input", function () { formDraft.who = fWho.value; });
+}
+
+function closeForm() {
+  formDraft = { text: "", period: "", who: "" };
+  setState({ showForm: false, error: null });
+}
+
+// ---------- Init ----------
+render();
+loadInitial();
+</script>
+</body>
+</html>
